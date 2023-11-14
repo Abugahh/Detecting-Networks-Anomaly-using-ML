@@ -3,7 +3,8 @@ import pandas as pd
 import random
 import time
 import streamlit as st
-
+import smtplib
+from email.message import EmailMessage
 
 # import pandas as pd
 
@@ -22,10 +23,10 @@ import streamlit as st
 
 
 
-import joblib
+# import joblib
 
-# Load the model from the pickle file
-rf = joblib.load('rf_model.pkl')
+# # Load the model from the pickle file
+# rf = joblib.load('rf_model.pkl')
 
 
 
@@ -54,6 +55,21 @@ table_placeholder = st.empty()
 all_packets = pd.DataFrame(columns=features + ['prediction'])
 
 
+
+def send_email(subject, body):
+    msg = EmailMessage()
+    msg.set_content(body)
+    msg['Subject'] = subject
+    msg['From'] = "cynthia.abugaa@gmail.com"  # replace with your email
+    msg['To'] = "moraabuga@gmail.com"  # replace with recipient's email
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login("cynthia.abugaa@gmail.com", "moraabuga82001")  # replace with your email and password
+    server.send_message(msg)
+    server.quit()
+
+
 num_iterations = 10  # replace with the number of iterations you want
 
 for _ in range(num_iterations):
@@ -76,16 +92,42 @@ for _ in range(num_iterations):
     # table_placeholder.table(df)
     
 
-        # Append the new packet to all_packets
-    all_packets = all_packets.append(df, ignore_index=True)
+    #     # Append the new packet to all_packets
+    # all_packets = all_packets.append(df, ignore_index=True)
+
+
+    # Append the new packet to all_packets
+    all_packets = pd.concat([all_packets, df], ignore_index=True)
+
 
     # Display all_packets in the table
     table_placeholder.table(all_packets)
 
+        # Check if the prediction is 'Attack'
+    if predictions[0] == 'Generic':
+        st.error('Alert: Attack detected!')
+        send_email('Alert', 'Attack detected!')
+
     print(selected_data, ':', predictions)
+
+
 
     # Wait for 5 seconds before selecting the next packet
     time.sleep(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
