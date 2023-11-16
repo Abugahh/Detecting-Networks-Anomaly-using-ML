@@ -32,6 +32,7 @@ features = ['state', 'dbytes', 'rate', 'sttl', 'sload', 'dload', 'dinpkt', 'tcpr
 
 
 ##DASHBOARD
+
 # Set the page title and icon
 
 st.set_page_config(
@@ -46,22 +47,8 @@ st.title("Live Network Traffic Dashboard")
 
 
 
-
-
-
-
-
-
-# create three columns for VA
-
-# col1, col2, col3 = st.columns(3)
-# col1.metric(
-#     label="No of Packets",
-#     value= len(all_packets),)
-# col2.metric("Wind", "9 mph", "-8%")
-# col3.metric("Humidity", "86%", "4%")
-
 # Create two columns
+#KPI METRICS
 col1, col2 = st.columns(2)
 
 
@@ -79,6 +66,13 @@ high_risk_placeholder = subcol1.empty()
 medium_risk_placeholder = subcol2.empty()
 low_risk_placeholder = subcol3.empty()
 
+
+#GRAPHS
+# create two columns for charts
+fig_col1, fig_col2 = st.columns(2)
+
+# Create a placeholder for the histogram
+hist_placeholder = fig_col2.empty()
 
 
 # Create a placeholder for the table
@@ -133,6 +127,10 @@ for _ in range(num_iterations):
         # Count the number of occurrences of each prediction
     prediction_counts = all_packets['prediction'].value_counts()
 
+
+
+
+
    # Define the prediction types that fall under each risk category
     high_risk_types = ['Backdoors', 'Exploits', 'Worms']
     medium_risk_types = ['DoS', 'Shellcode', 'Generic']
@@ -148,11 +146,27 @@ for _ in range(num_iterations):
     medium_risk_placeholder.metric(label="Medium", value=str(medium_risk_count))
     low_risk_placeholder.metric(label="Low", value=str(low_risk_count))
 
+
+
+
+
+    # Create a histogram displaying the type of attack and its frequency
+    plt.figure(figsize=(10,6))
+    sns.countplot(data=all_packets, x='prediction')
+    plt.title('Real-time Histogram of Attack Types')
+    plt.xlabel('Type of Attack')
+    plt.ylabel('Count')
+    plt.xticks(rotation=90)
+
+    # Display the histogram in the Streamlit app
+    hist_placeholder.pyplot(plt)
+    time.sleep(0.1) 
+
+
     
 
     # Display all_packets in the table
     table_placeholder.table(all_packets)
-
     time.sleep(5)
 
 
