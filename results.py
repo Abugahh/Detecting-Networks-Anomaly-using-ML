@@ -3,10 +3,16 @@ import pandas as pd
 import random
 import time
 import streamlit as st
-import smtplib
-from email.message import EmailMessage
+#import smtplib
+#from email.message import EmailMessage
 import matplotlib.pyplot as plt
 import seaborn as sns
+import base64
+#from plyer import notification
+
+
+import asyncio
+from desktop_notifier import DesktopNotifier
 
 
 
@@ -67,12 +73,17 @@ medium_risk_placeholder = subcol2.empty()
 low_risk_placeholder = subcol3.empty()
 
 
-#GRAPHS
+#GRAPHSSSS
 # create two columns for charts
 fig_col1, fig_col2 = st.columns(2)
 
 # Create a placeholder for the histogram
 hist_placeholder = fig_col2.empty()
+
+# Create a placeholder for the area chart in fig_col1
+area_chart_placeholder = fig_col1.empty()
+# Create a DataFrame to store the counts of normal traffic and attacks
+traffic_counts = pd.DataFrame(columns=['Normal', 'Attack'])
 
 
 # Create a placeholder for the table
@@ -85,7 +96,7 @@ all_packets = pd.DataFrame(columns=features + ['prediction'])
 
 
 
-num_iterations = 10  # replace with the number of iterations you want
+num_iterations = 4  # replace with the number of iterations you want
 
 for _ in range(num_iterations):
     # Select a random packet
@@ -135,12 +146,10 @@ for _ in range(num_iterations):
     high_risk_types = ['Backdoors', 'Exploits', 'Worms']
     medium_risk_types = ['DoS', 'Shellcode', 'Generic']
     low_risk_types = ['Fuzzers', 'Analysis', 'Reconnaissance']
-
     # Sum up the counts for the prediction types that fall under each risk category
     high_risk_count = prediction_counts[prediction_counts.index.isin(high_risk_types)].sum()
     medium_risk_count = prediction_counts[prediction_counts.index.isin(medium_risk_types)].sum()
     low_risk_count = prediction_counts[prediction_counts.index.isin(low_risk_types)].sum()
-
     # Update the metrics in the placeholders
     high_risk_placeholder.metric(label="High", value=str(high_risk_count))
     medium_risk_placeholder.metric(label="Medium", value=str(medium_risk_count))
@@ -149,25 +158,77 @@ for _ in range(num_iterations):
 
 
 
+    # Count the number of normal traffic and attacks
+    normal_count = prediction_counts[prediction_counts.index == 'Normal'].sum()
+    attack_count = prediction_counts[prediction_counts.index != 'Normal'].sum()
+    # Create a DataFrame with the counts of normal traffic and attacks
+    new_counts = pd.DataFrame({'Normal': [normal_count], 'Attack': [attack_count]})
+    # Append the counts to traffic_counts
+    traffic_counts = pd.concat([traffic_counts, new_counts], ignore_index=True)
+    # Create an area chart displaying the counts of normal traffic and attacks
+    area_chart_placeholder.line_chart(traffic_counts)
+    ## Create a line chart displaying the counts of normal traffic and attacks using matplot lib ( red and blue since stremlit library doesnt support)
+    # plt.figure(figsize=(10,6))
+    # plt.plot(traffic_counts.index, traffic_counts['Normal'], color='blue', label='Normal')
+    # plt.plot(traffic_counts.index, traffic_counts['Attack'], color='red', label='Attack')
+    # plt.title('Real-time Line Chart of Traffic Types')
+    # plt.xlabel('Time')
+    # plt.ylabel('Count')
+    # plt.legend()
 
-    # Create a histogram displaying the type of attack and its frequency
-    plt.figure(figsize=(10,6))
-    sns.countplot(data=all_packets, x='prediction')
-    plt.title('Real-time Histogram of Attack Types')
-    plt.xlabel('Type of Attack')
-    plt.ylabel('Count')
-    plt.xticks(rotation=90)
+    # # Display the line chart in the Streamlit app
+    # area_chart_placeholder.pyplot(plt)
 
-    # Display the histogram in the Streamlit app
-    hist_placeholder.pyplot(plt)
+
+
+    # Create a DataFrame with the counts of each prediction
+    prediction_df = pd.DataFrame(prediction_counts).reset_index()
+    prediction_df.columns = ['Type of Attack', 'Count']
+
+    # Create a bar chart (which is effectively a histogram) using Streamlit
+    hist_placeholder.bar_chart(prediction_df.set_index('Type of Attack'))
+
+    # # Create a histogram displaying the type of attack and its frequency
+    # plt.figure(figsize=(10,6))
+    # sns.countplot(data=all_packets, x='prediction')
+    # plt.title('Real-time Histogram of Attack Types')
+    # plt.xlabel('Type of Attack')
+    # plt.ylabel('Count')
+    # plt.xticks(rotation=90)
+    # plt.draw()
+    # # Display the histogram in the Streamlit app
+    # hist_placeholder.pyplot(plt)
     time.sleep(0.1) 
 
-
     
+    if predictions[0] == 'Fuzzers, Analysis , Reconnaissance , DoS, Shellcode, Generic, Backdoors,Exploits,Worms':
+        st.toast('Alert: An attack was predicted!', duration=30)
 
     # Display all_packets in the table
     table_placeholder.table(all_packets)
     time.sleep(5)
+    
+    # If an attack is predicted, show a toast notification in the Streamlit app
+
+
+
+ 
+
+
+
+
+
+
+
+
+#END OF FOR LOOP
+
+#code to download all packetsa as csv.
+csv = all_packets.to_csv(index=False)
+b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+href = f'<a href="data:file/csv;base64,{b64}" download="all_packets.csv">Download CSV File</a>'
+st.markdown(href, unsafe_allow_html=True)
+
 
 
 
