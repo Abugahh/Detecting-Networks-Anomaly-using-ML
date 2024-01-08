@@ -11,8 +11,8 @@ import base64
 #from plyer import notification
 
 
-import asyncio
-from desktop_notifier import DesktopNotifier
+# import asyncio
+# from desktop_notifier import DesktopNotifier
 
 
 
@@ -31,7 +31,6 @@ data = []
 with open(json_file_path, 'r') as f:
     for line in f:
         data.append(json.loads(line))
-
 
 # Select the 10 features in the same order as the training data
 features = ['state', 'dbytes', 'rate', 'sttl', 'sload', 'dload', 'dinpkt', 'tcprtt', 'ackdat', 'ct_state_ttl']
@@ -96,25 +95,26 @@ all_packets = pd.DataFrame(columns=features + ['prediction'])
 
 
 
-num_iterations = 4  # replace with the number of iterations you want
+num_iterations = 20  # number of packets to process
 
 for _ in range(num_iterations):
-    # Select a random packet
+    # Select a random packet in data from above
     packet = random.choice(data)
 
-    # Select the 10 features from the packet
+    # Select the 10 features from the packet found in features in above and places them as a dictionary(key value paiar) for my model
+    #The for feature in features part is a loop that goes through each item in the features list. For each feature, it gets the corresponding value from the packet dictionary (packet[feature]) and adds a new entry to the selected_data dictionary.  So, the resulting selected_data dictionary contains the selected features from the packet.
     selected_data = {feature: packet[feature] for feature in features}
 
-    # Convert to DataFrame as the model expects input in this format
+    # Convert selected data from packets to DataFrame as the model expects input in this format
     df = pd.DataFrame([selected_data], columns=features)
 
     # Use the trained model to make predictions
     predictions = rf.predict(df)
     scores = rf.predict_proba(df)
 
-    # Add the prediction to the DataFrame
+    # Add the prediction column to the DataFrame 0 is the score for the first instance
     df['prediction'] = predictions[0]
-    df['Probability score'] = scores.max(axis=1)[0]
+    df['Probability score'] = scores.max(axis=1)[0]         #part gets the maximum value across all classes for each instance
     
 
     #     # Append the new packet to all_packets
@@ -124,18 +124,11 @@ for _ in range(num_iterations):
 
 
 
-    # # Update the number of packets in the first column
-    # with col1:
-    #     st.metric(
-    #         label="No of Packets",
-    #         value=str(len(all_packets)),
-    #     )
-
-        # Update the metric in the placeholder
+    # Update the metric in the placeholder
     metric_placeholder.metric(label="No of Packets ⏳", value=str(len(all_packets)))
     
 
-        # Count the number of occurrences of each prediction
+    # Count the number of occurrences of each prediction
     prediction_counts = all_packets['prediction'].value_counts()
 
 
@@ -201,15 +194,17 @@ for _ in range(num_iterations):
     time.sleep(0.1) 
 
     
-    if predictions[0] == 'Fuzzers, Analysis , Reconnaissance , DoS, Shellcode, Generic, Backdoors,Exploits,Worms':
-        st.toast('Alert: An attack was predicted!', duration=30)
+    # If an attack is predicted, show a toast notification in the Streamlit app
+
+    if predictions[0] in ['Fuzzers', 'Analysis', 'Reconnaissance', 'DoS', 'Shellcode', 'Generic', 'Backdoors', 'Exploits', 'Worms']:
+        st.toast('Alert: An attack was predicted!')
 
     # Display all_packets in the table
     table_placeholder.table(all_packets)
-    time.sleep(5)
-    
-    # If an attack is predicted, show a toast notification in the Streamlit app
+    time.sleep(3)
 
+    
+   
 
 
  
