@@ -1,6 +1,6 @@
 # Network-Anomaly-Detection
 
-#### Running the app: streamlit run results.py
+#### Running the app:  Environment conda activate networkanomaly then install dependancies then run streamlit run results.py
 
 ![Example Image](/home/Moraa/Projects/Network-Anomaly-Detection/Images/results.png)
 
